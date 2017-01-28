@@ -6,7 +6,7 @@ multiuser, multipurpose, git based and easy to pipe to grep.
 ## help
 
     git based simple changelog for use with grep. multiple users can use 
-    this tool as long they remember to pull and push to a sentral repository.
+    this tool as long they remember to pull and push to a central repository.
     set environment variable IDID_STORE to change the changelog store folder 
     location.
 
