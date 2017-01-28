@@ -1,9 +1,9 @@
-= idid
+# idid
 
 idid, as in I did, records a searchable changelog over time.
 multiuser, multipurpose, git based and easy to pipe to grep.
 
-== help
+## help
 
     git based simple changelog for use with grep. multiple users can use 
     this tool as long they remember to pull and push to a sentral repository.
