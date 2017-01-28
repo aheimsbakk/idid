@@ -240,7 +240,7 @@ CMD="$1"
 DEF="${IDID_SUBFOLDER:-$USER}"
 NOW_DATE=$(date -u +%F)
 NOW_TIME=$(date -u +%T)
-STR=${IDID_STORE:-"~/.idid"}
+STR=${IDID_STORE:-"$HOME/.idid"}
 GIT=${IDID_STORE_GIT:-"$STR/.git"}
 
 if [[ -d "$STR" ]] || ask "" "- create '$STR' store folder?"; then
