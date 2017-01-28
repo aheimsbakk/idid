@@ -116,7 +116,7 @@ function cmd_last {
 function cmd_git {
     if [[ "$1" == "init" ]]; then
         git $1 "$STR" 
-        logs=$(find "$STR" -type f -name \*log -printf "%P\n")
+        local logs=$(find "$STR" -type f -name \*log -printf "%P\n")
         git_add $logs 'initial commit' 
     elif [[ -d "$GIT" ]]; then
         git -C "$STR" ${@}
