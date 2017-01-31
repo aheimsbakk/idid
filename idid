@@ -18,7 +18,7 @@ function ask {
 
 function git_commit {
     [[ -d "$GIT" ]] || return
-    git -C "$STR" commit -m "$1"    
+    git -C "$STR" commit -m "$1"
 }
 
 function git_add {
@@ -29,74 +29,89 @@ function git_add {
 }
 
 function cat_logs {
-    find $STR -type f -name \*log -regex "$1" -exec cat {} \; 
+    find $STR -type f -name \*log -regex "$1" -exec cat {} \;
 }
 
 function cat_tags {
-    cat_logs "$1" | egrep -o "$2[^ ]+" | sort | uniq -c 
+    cat_logs "$1" | egrep -o "$2[^ ]+" | sort | uniq -c
 }
 
 function cmd_ls {
-	IFS="," eval 'echo "- listing: $*"'
-	local terms="*$(printf '%s*|*' "$@")"
-    tree -C --noreport --prune --matchdirs --ignore-case -P "${terms%|*}" "$STR" | tail -n +2 | sed 's/\.log//g'
+    local terms
+    IFS="," eval 'echo "- listing: $*"'
+    terms="*$(printf '%s*|*' "$@")"
+    tree -C --noreport --prune --matchdirs --ignore-case -P \
+        "${terms%|*}" "$STR" | tail -n +2 | sed 's/\.log//g'
 }
 
 function cmd_log {
+    local terms
     [[ -z "$@" ]] && die "usage: $PRG $CMD [-a] [subfolder] [partial date]" 
-    while getopts ":a" opt; do case $opt in
-        a) shift;;
-        ?) die "! invalid option: $PRG $CMD -$OPTARG";;
-    esac; done    
+    while getopts ":a" opt; do
+        case $opt in
+            a) shift;;
+            ?) die "! invalid option: $PRG $CMD -$OPTARG";;
+        esac
+    done
     IFS="," eval 'echo "- finding: $*"'
-	local terms=".*$(printf '%s.*' "$@")" #"
-    cat_logs "$terms" | sort 
+    terms=".*$(printf '%s.*' "$@")" #"
+    cat_logs "$terms" | sort
 }
 
 function cmd_tags {
+    local terms
     [[ -z "$@" ]] && die "usage: $PRG $CMD [-a] [subfolder] [partial date]" 
-    while getopts ":a" opt; do case $opt in
-        a) shift;;
-        ?) die "! invalid option: $PRG $CMD -$OPTARG";;
-    esac; done    
+    while getopts ":a" opt; do
+        case $opt in
+            a) shift;;
+            ?) die "! invalid option: $PRG $CMD -$OPTARG";;
+        esac
+    done
     IFS="," eval 'echo "- # tags in: $*"'
-	local terms=".*$(printf '%s.*' "$@")" #"
-    cat_tags "$terms" "#"  
+    terms=".*$(printf '%s.*' "$@")" #"
+    cat_tags "$terms" "#"
     echo
     IFS="," eval 'echo "- @ tags in: $*"'
-    cat_tags "$terms" "@"  
+    cat_tags "$terms" "@"
 }
 
 function cmd_add {
-    while getopts ":d:ay" opt; do case $opt in
-        d) local DEF="$OPTARG";;
-        a) local auto="auto";;
-        y) local yes="y";;
-        \?) die "! invalid option: $PRG $CMD -$OPTARG"
-    esac; done 
-    local line="${@:$OPTIND}"
-    [[ -z "$line" ]] && die "usage: $PRG $CMD [-a] [-d subfolder] changelog text"
-    local partial_line="${auto:-manual} - $DEF - $line"
-    local full_line="$NOW_DATE $NOW_TIME - $partial_line"
-    local log_file="$DEF/$NOW_DATE.log"
+    local DEF auto yes line partial_line full_line log_line
+    while getopts ":d:ay" opt; do
+        case $opt in
+            d) DEF="$OPTARG";;
+            a) auto="auto";;
+            y) yes="y";;
+            \?) die "! invalid option: $PRG $CMD -$OPTARG"
+        esac
+    done
+    line="${@:$OPTIND}"
+    [[ -z "$line" ]] && \
+        die "usage: $PRG $CMD [-a] [-d subfolder] changelog text"
+    partial_line="${auto:-manual} - $DEF - $line"
+    full_line="$NOW_DATE $NOW_TIME - $partial_line"
+    log_file="$DEF/$NOW_DATE.log"
     echo - logging to \"$log_file\"
     echo "$full_line"
-    [[ -d "$STR/$DEF" || ! -z "$yes" ]] || ask "$yes" "- subfolder '$DEF' don't exist, create?" 
-    ask "$yes" "- commit change?" 
+    [[ -d "$STR/$DEF" || ! -z "$yes" ]] || \
+        ask "$yes" "- subfolder '$DEF' don't exist, create?"
+    ask "$yes" "- commit change?"
     mkdir -p "$STR/$DEF"
     echo "$full_line" >> "$STR/$log_file"
     git_add $log_file "$partial_line"
 }
 
 function last_files {
+    local query_second file_date file_second
     terms="$1"; shift
     if ! date -d "$*"  > /dev/null 2>&1; then
         die "! incorrect date format, see \"date -d\" for format"
     fi
-    local query_second=$(date -d "$*" +%s)
+    query_second=$(date -d "$*" +%s)
     for f in $(find $STR -type f -name \*log -regex "$terms"); do
-        local file_date=$(echo $f | egrep -o '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}') 
-        local file_second=$(date -d $file_date +%s)
+        file_date=$(echo $f | \
+            egrep -o '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')
+        file_second=$(date -d $file_date +%s)
         if [[ $query_second -lt $file_second ]]; then
             echo $f
         fi
@@ -104,20 +119,25 @@ function last_files {
 }
 
 function cmd_last {
-    [[ -z "$@" ]] && die "usage: $PRG $CMD [-d subfolder] -- date -d argument" 
-    while getopts ":d:a" opt; do case $opt in
-        d) local subfolder="$OPTARG";;
-        ?) die "! invalid option: $PRG $CMD -$OPTARG";;
-    esac; done
-    local terms=".*$(printf '%s.*' "$subfolder")" #"
+    local subfolder terms
+    [[ -z "$@" ]] && \
+        die "usage: $PRG $CMD [-d subfolder] -- date -d argument" 
+    while getopts ":d:a" opt; do
+        case $opt in
+            d) subfolder="$OPTARG";;
+            ?) die "! invalid option: $PRG $CMD -$OPTARG";;
+        esac
+    done
+    terms=".*$(printf '%s.*' "$subfolder")" #"
     last_files "$terms" "${@:OPTIND}" | xargs cat | sort
 }
 
 function cmd_git {
+    local logs
     if [[ "$1" == "init" ]]; then
-        git $1 "$STR" 
-        local logs=$(find "$STR" -type f -name \*log -printf "%P\n")
-        git_add $logs 'initial commit' 
+        git $1 "$STR"
+        logs=$(find "$STR" -type f -name \*log -printf "%P\n")
+        git_add $logs 'initial commit'
     elif [[ -d "$GIT" ]]; then
         git -C "$STR" ${@}
     else
@@ -128,20 +148,20 @@ function cmd_git {
 
 function cmd_version {
     cat <<EOF
-git based simple changelog for use with grep. multiple users can use 
+git based simple changelog for use with grep. multiple users can use
 this tool as long they remember to pull and push to a central repository.
-set environment variable IDID_STORE to change the changelog store folder 
+set environment variable IDID_STORE to change the changelog store folder
 location.
 
-set IDID_SUBFOLDER environment variable or use the -d option to change 
+set IDID_SUBFOLDER environment variable or use the -d option to change
 the default store subfolder.
 
-this program is heavly inspired from pass, the standard unix password 
-manager. look at https://www.passwordstore.org/. 
+this program is heavly inspired from pass, the standard unix password
+manager. look at https://www.passwordstore.org/.
 
 version:
-    0.9
-    
+    0.10
+
 author:
     arnulf heimsbakk
     https://github.com/aheimsbakk/idid
@@ -151,38 +171,38 @@ EOF
 function cmd_help {
     cmd_version
     cat <<EOF
-    
+
 usage:
-    $PRG add [-a] [-y] [-d subfolder] changelog free text 
+    $PRG add [-a] [-y] [-d subfolder] changelog free text
         add a changelog line in the the specified directory structure.
-        
-        -a  mark log entry as done from script, automatic 
+
+        -a  mark log entry as done from script, automatic
         -d  destination directory for changelog, if not specified
             it defaults to bash \$USER variable, currently "$USER"
         -y  answer yes to all questons
 
     $PRG list [subfolder]
         list directory structure and changelog files.
-        
+
     $PRG log [-a|subfolder] [partial date]
         list changelog, filter on subfolder and parts of a date on the
-        format 1970-01-01. 
-        
+        format 1970-01-01.
+
         -a  list all change log lines without filtering
-        
+
     $PRG tags [-a|subfolder] [partial date]
-        list #- and @-tags in the changelog, filter on subfolder and 
+        list #- and @-tags in the changelog, filter on subfolder and
         parts of a date on the format 1970-01-01.
-        
+
     $PRG help
         show this help screen
 
     $PRG example
         show some examples of usage
-        
+
     $PRG version
-        show current version 
-        
+        show current version
+
     $PRG
         list last week of logs
 EOF
@@ -203,11 +223,11 @@ tree structure of all changelogs from all operators:
 list log entries for all in infra:
 
     $PRG log infra
-    
+
 list all tags used by infra:
 
     $PRG tags infra
-    
+
 list log entries for last week:
 
     $PRG last -- last week
@@ -218,7 +238,7 @@ list last two days from infra:
 
 list last week:
 
-    $PRG  
+    $PRG
 
 init git repository:
 
@@ -240,23 +260,23 @@ CMD="$1"
 DEF="${IDID_SUBFOLDER:-$USER}"
 NOW_DATE=$(date -u +%F)
 NOW_TIME=$(date -u +%T)
-STR=${IDID_STORE:-"$HOME/.idid"}
-GIT=${IDID_STORE_GIT:-"$STR/.git"}
+STR="${IDID_STORE:-$HOME/.idid}"
+GIT="${IDID_STORE_GIT:-$STR/.git}"
 
 if [[ -d "$STR" ]] || ask "" "- create '$STR' store folder?"; then
     mkdir -p "$STR"
-fi 
+fi
 
 case "$CMD" in
     help|-h|--help)         shift;  cmd_help;;
     version|-v|--version)   shift;  cmd_version;;
     example|examples)       shift;  cmd_example;;
-    ls|list|show)           shift;  cmd_ls $@;;
-    log)                    shift;  cmd_log $@;;
-    add)                    shift;  cmd_add $@;;
-    tags)                   shift;  cmd_tags $@;;
-    last)                   shift;  cmd_last $@;;
-    git)                    shift;  cmd_git $@;;
+    ls|list|show)           shift;  cmd_ls "$@";;
+    log)                    shift;  cmd_log "$@";;
+    add)                    shift;  cmd_add "$@";;
+    tags)                   shift;  cmd_tags "$@";;
+    last)                   shift;  cmd_last "$@";;
+    git)                    shift;  cmd_git "$@";;
     *) CMD="last";          cmd_last -- last week;;
 esac
 
