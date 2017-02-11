@@ -105,10 +105,10 @@ function cmd_add {
 function last_files {
     local query_second file_date file_second
     terms="$1"; shift
-    if ! date -d "$*"  > /dev/null 2>&1; then
+    if ! date -d "$*" > /dev/null 2>&1; then
         die "! incorrect date format, see \"date -d\" for format"
     fi
-    query_second="$(date -d '$*' +%s)"
+    query_second="$(date -d "$*" +%s)"
     for f in $(find "$STR" -type f -name \*log -regex "$terms"); do
         file_date="$(echo $f | \
             egrep -o '[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}')"
@@ -161,7 +161,7 @@ this program is heavly inspired from pass, the standard unix password
 manager. look at https://www.passwordstore.org/.
 
 version:
-    0.11
+    0.12
 
 author:
     arnulf heimsbakk

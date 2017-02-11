@@ -17,7 +17,7 @@ multiuser, multipurpose, git based and easy to pipe to grep.
     manager. look at https://www.passwordstore.org/.
 
     version:
-        0.11
+        0.12
 
     author:
         arnulf heimsbakk
